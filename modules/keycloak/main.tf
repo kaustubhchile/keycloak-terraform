@@ -9,8 +9,8 @@ data "aws_secretsmanager_secret_version" "keycloak_admin" {
 }
 
 locals {
-  rds_creds     = jsondecode(data.aws_secretsmanager_secret_version.rds.secret_string)
-  admin_creds   = jsondecode(data.aws_secretsmanager_secret_version.keycloak_admin.secret_string)
+  rds_creds   = jsondecode(data.aws_secretsmanager_secret_version.rds.secret_string)
+  admin_creds = jsondecode(data.aws_secretsmanager_secret_version.keycloak_admin.secret_string)
 }
 
 # ── Kubernetes Namespace ───────────────────────────────────────────────────────

@@ -21,9 +21,9 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "keycloak-tfstate-bucket"       # ← change to your unique bucket name
+    bucket         = "keycloak-tfstate-bucket" # ← change to your unique bucket name
     key            = "keycloak/terraform.tfstate"
-    region         = "us-east-1"                     # ← change to your region
+    region         = "us-east-1" # ← change to your region
     encrypt        = true
     dynamodb_table = "keycloak-tfstate-lock"
   }

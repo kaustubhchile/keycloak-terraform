@@ -125,9 +125,9 @@ variable "db_password" {
       null (default) = auto-generate a 32-char random password
       custom         = minimum 16 characters
   EOT
-  type      = string
-  default   = null
-  sensitive = true
+  type        = string
+  default     = null
+  sensitive   = true
 }
 
 variable "keycloak_admin_user" {
@@ -136,8 +136,8 @@ variable "keycloak_admin_user" {
       null (default) = use "admin"
       custom         = any non-empty string
   EOT
-  type    = string
-  default = null
+  type        = string
+  default     = null
 }
 
 variable "keycloak_admin_password" {
@@ -146,9 +146,9 @@ variable "keycloak_admin_password" {
       null (default) = auto-generate a 24-char random password
       custom         = minimum 12 characters
   EOT
-  type      = string
-  default   = null
-  sensitive = true
+  type        = string
+  default     = null
+  sensitive   = true
 }
 
 # ── Keycloak ───────────────────────────────────────────────────────────────────
