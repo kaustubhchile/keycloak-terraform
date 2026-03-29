@@ -1,0 +1,254 @@
+name: "Keycloak Infrastructure"
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Terraform action to run"
+        required: true
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options:
+          - prod
+          - staging
+        default: prod
+      confirm_destroy:
+        description: "Type DESTROY to confirm destroy action (ignored for plan/apply)"
+        required: false
+        type: string
+        default: ""
+
+env:
+  TF_VERSION: "1.7.5"
+  AWS_REGION: "us-east-1"
+  TF_WORKING_DIR: "."
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  # ── Guard: prevent accidental destroy ────────────────────────────────────────
+  validate-inputs:
+    name: "Validate Inputs"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Check destroy confirmation"
+        if: ${{ github.event.inputs.action == 'destroy' }}
+        run: |
+          if [ "${{ github.event.inputs.confirm_destroy }}" != "DESTROY" ]; then
+            echo "❌ Destroy action requires 'DESTROY' typed in the confirm_destroy field."
+            exit 1
+          fi
+          echo "✅ Destroy confirmed."
+
+  # ── Terraform Plan ────────────────────────────────────────────────────────────
+  terraform:
+    name: "Terraform ${{ github.event.inputs.action }}"
+    runs-on: ubuntu-latest
+    needs: validate-inputs
+    environment: ${{ github.event.inputs.environment }}
+
+    defaults:
+      run:
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+    steps:
+      # ── Checkout ──────────────────────────────────────────────────────────────
+      - name: "Checkout repository"
+        uses: actions/checkout@v4
+
+      # ── AWS Auth via static credentials (access key + secret) ────────────────
+      - name: "Configure AWS credentials"
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # ── Setup Terraform ───────────────────────────────────────────────────────
+      - name: "Setup Terraform"
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      # ── Terraform fmt check ───────────────────────────────────────────────────
+      - name: "Terraform Format Check"
+        id: fmt
+        run: terraform fmt -check -recursive
+        continue-on-error: true
+
+      # ── Terraform Init (S3 backend + DynamoDB lock) ───────────────────────────
+      - name: "Terraform Init"
+        id: init
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="key=keycloak/${{ github.event.inputs.environment }}/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}" \
+            -backend-config="encrypt=true"
+
+      # ── Terraform Validate ────────────────────────────────────────────────────
+      - name: "Terraform Validate"
+        id: validate
+        run: terraform validate -no-color
+
+      # ── Write terraform.tfvars ────────────────────────────────────────────────
+      # Credentials: if the GitHub secret is set → BYO mode; if empty → auto-generate.
+      # All four credential secrets are OPTIONAL in GitHub. Leave them unset to
+      # let Terraform auto-generate strong values and store them in Secrets Manager.
+      - name: "Write terraform.tfvars"
+        run: |
+          cat <<EOF > terraform.tfvars
+          aws_region             = "${{ env.AWS_REGION }}"
+          environment            = "${{ github.event.inputs.environment }}"
+          cluster_name           = "keycloak-cluster-${{ github.event.inputs.environment }}"
+          keycloak_replica_count = 2
+          db_multi_az            = true
+          EOF
+
+          # Append BYO credentials only if the secrets are actually set
+          # (GitHub returns empty string for unset secrets)
+          if [ -n "${{ secrets.DB_USERNAME }}" ]; then
+            echo 'db_username = "${{ secrets.DB_USERNAME }}"' >> terraform.tfvars
+          fi
+          if [ -n "${{ secrets.DB_PASSWORD }}" ]; then
+            echo 'db_password = "${{ secrets.DB_PASSWORD }}"' >> terraform.tfvars
+          fi
+          if [ -n "${{ secrets.KEYCLOAK_ADMIN_USER }}" ]; then
+            echo 'keycloak_admin_user = "${{ secrets.KEYCLOAK_ADMIN_USER }}"' >> terraform.tfvars
+          fi
+          if [ -n "${{ secrets.KEYCLOAK_ADMIN_PASSWORD }}" ]; then
+            echo 'keycloak_admin_password = "${{ secrets.KEYCLOAK_ADMIN_PASSWORD }}"' >> terraform.tfvars
+          fi
+
+          echo "--- Credential mode summary ---"
+          echo "db_username:             $( [ -n '${{ secrets.DB_USERNAME }}' ] && echo 'BYO (from secret)' || echo 'auto-generate' )"
+          echo "db_password:             $( [ -n '${{ secrets.DB_PASSWORD }}' ] && echo 'BYO (from secret)' || echo 'auto-generate' )"
+          echo "keycloak_admin_user:     $( [ -n '${{ secrets.KEYCLOAK_ADMIN_USER }}' ] && echo 'BYO (from secret)' || echo 'default: admin' )"
+          echo "keycloak_admin_password: $( [ -n '${{ secrets.KEYCLOAK_ADMIN_PASSWORD }}' ] && echo 'BYO (from secret)' || echo 'auto-generate' )"
+
+      # ══════════════════════════════════════════════════════════════════════════
+      #  PLAN
+      # ══════════════════════════════════════════════════════════════════════════
+      - name: "Terraform Plan"
+        id: plan
+        if: ${{ github.event.inputs.action == 'plan' || github.event.inputs.action == 'apply' }}
+        run: |
+          terraform plan \
+            -no-color \
+            -out=tfplan \
+            -var-file=terraform.tfvars
+        continue-on-error: false
+
+      # ── Upload plan artifact ──────────────────────────────────────────────────
+      - name: "Upload Plan"
+        if: ${{ github.event.inputs.action == 'plan' || github.event.inputs.action == 'apply' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: "tfplan-${{ github.event.inputs.environment }}-${{ github.run_id }}"
+          path: tfplan
+          retention-days: 7
+
+      # ── Post plan summary to job summary ─────────────────────────────────────
+      - name: "Post Plan Summary"
+        if: ${{ github.event.inputs.action == 'plan' || github.event.inputs.action == 'apply' }}
+        run: |
+          echo "## Terraform Plan — \`${{ github.event.inputs.environment }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          terraform show -no-color tfplan | tail -20 >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+      # ══════════════════════════════════════════════════════════════════════════
+      #  APPLY
+      # ══════════════════════════════════════════════════════════════════════════
+      - name: "Terraform Apply"
+        id: apply
+        if: ${{ github.event.inputs.action == 'apply' }}
+        run: |
+          terraform apply \
+            -no-color \
+            -auto-approve \
+            tfplan
+
+      # ── Capture outputs after apply ───────────────────────────────────────────
+      - name: "Capture Outputs"
+        id: outputs
+        if: ${{ github.event.inputs.action == 'apply' }}
+        run: |
+          echo "### ✅ Keycloak Deployed!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          LB=$(terraform output -raw keycloak_load_balancer_hostname 2>/dev/null || echo "pending")
+          CLUSTER=$(terraform output -raw eks_cluster_name 2>/dev/null || echo "unknown")
+          RDS_SECRET=$(terraform output -raw rds_credentials_secret_arn 2>/dev/null || echo "unknown")
+          KC_SECRET=$(terraform output -raw keycloak_admin_credentials_secret_arn 2>/dev/null || echo "unknown")
+
+          echo "| Resource | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| EKS Cluster | \`$CLUSTER\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Keycloak URL | http://$LB |" >> $GITHUB_STEP_SUMMARY
+          echo "| Admin Console | http://$LB/admin |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "#### 🔐 Retrieve credentials from AWS Secrets Manager" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "# Keycloak admin username + password" >> $GITHUB_STEP_SUMMARY
+          echo "aws secretsmanager get-secret-value --secret-id $KC_SECRET --query SecretString --output text | jq ." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "# RDS username + password + host + JDBC URL" >> $GITHUB_STEP_SUMMARY
+          echo "aws secretsmanager get-secret-value --secret-id $RDS_SECRET --query SecretString --output text | jq ." >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+          echo "lb_hostname=$LB" >> $GITHUB_OUTPUT
+          echo "cluster_name=$CLUSTER" >> $GITHUB_OUTPUT
+
+      # ── Update kubeconfig & verify pods ──────────────────────────────────────
+      - name: "Verify Keycloak Pods"
+        if: ${{ github.event.inputs.action == 'apply' }}
+        run: |
+          CLUSTER=$(terraform output -raw eks_cluster_name 2>/dev/null || echo "keycloak-cluster-${{ github.event.inputs.environment }}")
+          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name "$CLUSTER"
+          echo "--- Keycloak pods ---"
+          kubectl get pods -n keycloak -o wide || true
+          echo "--- Keycloak service ---"
+          kubectl get svc -n keycloak || true
+
+      # ══════════════════════════════════════════════════════════════════════════
+      #  DESTROY
+      # ══════════════════════════════════════════════════════════════════════════
+      - name: "Terraform Plan Destroy"
+        id: plan_destroy
+        if: ${{ github.event.inputs.action == 'destroy' }}
+        run: |
+          terraform plan \
+            -destroy \
+            -no-color \
+            -out=tfplan-destroy \
+            -var-file=terraform.tfvars
+
+      - name: "Terraform Destroy"
+        id: destroy
+        if: ${{ github.event.inputs.action == 'destroy' }}
+        run: |
+          echo "⚠️ Destroying ALL Keycloak infrastructure in ${{ github.event.inputs.environment }}..."
+          terraform apply \
+            -no-color \
+            -auto-approve \
+            tfplan-destroy
+          echo "### 🗑️ Infrastructure Destroyed" >> $GITHUB_STEP_SUMMARY
+          echo "Environment \`${{ github.event.inputs.environment }}\` has been torn down." >> $GITHUB_STEP_SUMMARY
+
+      # ── Notify on failure ─────────────────────────────────────────────────────
+      - name: "Notify on Failure"
+        if: failure()
+        run: |
+          echo "### ❌ Terraform ${{ github.event.inputs.action }} FAILED" >> $GITHUB_STEP_SUMMARY
+          echo "Check the job logs above for details." >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,22 @@
+# Terraform state & cache
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+*.tfplan
+tfplan
+tfplan-destroy
+
+# Secrets — never commit these
+terraform.tfvars
+*.auto.tfvars
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
