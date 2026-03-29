@@ -180,8 +180,6 @@ resource "aws_db_instance" "this" {
   username = local.db_username # BYO or auto-generated
   password = local.db_password # BYO or auto-generated
 
-  manage_master_user_password = false
-
   db_subnet_group_name   = aws_db_subnet_group.this.name
   vpc_security_group_ids = [aws_security_group.rds.id]
   parameter_group_name   = aws_db_parameter_group.this.name
