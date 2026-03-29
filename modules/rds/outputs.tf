@@ -24,14 +24,4 @@ output "keycloak_admin_secret_arn" {
   value       = aws_secretsmanager_secret.keycloak_admin.arn
 }
 
-output "rds_secret_arn" {
-  description = "ARN of the Secrets Manager secret holding RDS credentials"
-  value       = aws_secretsmanager_secret.rds.arn
-}
-
-output "keycloak_admin_secret_arn" {
-  description = "ARN of the Secrets Manager secret holding Keycloak admin credentials"
-  value       = aws_secretsmanager_secret.keycloak_admin.arn
-}
-
 

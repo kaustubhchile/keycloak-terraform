@@ -19,7 +19,7 @@ variable "db_username" {
   sensitive   = true
 
   validation {
-    condition     = self == null || can(regex("^[a-zA-Z][a-zA-Z0-9_]{1,62}$", self))
+    condition     = var.db_username == null || can(regex("^[a-zA-Z][a-zA-Z0-9_]{1,62}$", var.db_username))
     error_message = "db_username must start with a letter and contain only letters, digits, or underscores (max 63 chars)."
   }
 }
@@ -31,7 +31,7 @@ variable "db_password" {
   sensitive   = true
 
   validation {
-    condition     = self == null || length(self) >= 16
+    condition     = var.db_password == null || length(var.db_password) >= 16
     error_message = "db_password must be at least 16 characters."
   }
 }
@@ -50,7 +50,7 @@ variable "keycloak_admin_password" {
   sensitive   = true
 
   validation {
-    condition     = self == null || length(self) >= 12
+    condition     = var.keycloak_admin_password == null || length(var.keycloak_admin_password) >= 12
     error_message = "keycloak_admin_password must be at least 12 characters."
   }
 }
