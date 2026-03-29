@@ -31,7 +31,7 @@ variable "db_password" {
   sensitive   = true
 
   validation {
-    condition     = var.db_password == null || length(coalesce(var.db_password, "")) >= 16
+    condition     = var.db_password == null || length(var.db_password) >= 16
     error_message = "db_password must be at least 16 characters."
   }
 }
@@ -50,7 +50,7 @@ variable "keycloak_admin_password" {
   sensitive   = true
 
   validation {
-    condition     = var.keycloak_admin_password == null || length(coalesce(var.keycloak_admin_password, "")) >= 12
+    condition     = var.keycloak_admin_password == null || length(var.keycloak_admin_password) >= 12
     error_message = "keycloak_admin_password must be at least 12 characters."
   }
 }
