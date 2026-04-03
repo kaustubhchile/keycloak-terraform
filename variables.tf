@@ -98,9 +98,9 @@ variable "db_engine_version" {
 }
 
 variable "db_multi_az" {
-  description = "Enable Multi-AZ for RDS (recommended for production)"
+  description = "Enable Multi-AZ for RDS (AWS Free Tier does not support Multi-AZ)"
   type        = bool
-  default     = true
+  default     = false # ← Changed from true to false
 }
 
 # ── Optional credential overrides (BYO or auto-generate) ──────────────────────

@@ -163,7 +163,7 @@ resource "aws_db_parameter_group" "this" {
   tags = { Name = "${var.environment}-keycloak-pg15" }
 }
 
-# ── RDS Instance ───────────────────────────────────────────────────────────────
+# ── RDS Instance ─────────────────────────────────────────────────────────────
 resource "aws_db_instance" "this" {
   identifier = "${var.environment}-keycloak-postgres"
 
@@ -184,18 +184,18 @@ resource "aws_db_instance" "this" {
   vpc_security_group_ids = [aws_security_group.rds.id]
   parameter_group_name   = aws_db_parameter_group.this.name
 
-  multi_az            = var.db_multi_az
+  multi_az            = false # ← Changed from true to false for Free Tier
   publicly_accessible = false
   deletion_protection = true
 
   skip_final_snapshot       = false
   final_snapshot_identifier = "${var.environment}-keycloak-final-snapshot"
 
-  backup_retention_period = 7
+  backup_retention_period = 1 # ← CHANGED from 7 to 1 (Free Tier max)
   backup_window           = "03:00-04:00"
   maintenance_window      = "Mon:04:00-Mon:05:00"
 
-  performance_insights_enabled = true
+  performance_insights_enabled = false # ← Also disable this (Free Tier limitation)
 
   tags = { Name = "${var.environment}-keycloak-postgres" }
 }

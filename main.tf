@@ -4,49 +4,49 @@
 # After the bucket + table exist, uncomment the backend block in versions.tf
 # and run `terraform init -migrate-state`.
 
-resource "aws_s3_bucket" "tfstate" {
-  bucket        = "keycloak-tfstate-bucket" # ← must match versions.tf backend block
-  force_destroy = false
+# resource "aws_s3_bucket" "tfstate" {
+#   bucket        = "keycloak-tfstate-bucket" # ← must match versions.tf backend block
+#   force_destroy = false
 
-  lifecycle {
-    prevent_destroy = true
-  }
-}
+#   lifecycle {
+#     prevent_destroy = true
+#   }
+# }
 
-resource "aws_s3_bucket_versioning" "tfstate" {
-  bucket = aws_s3_bucket.tfstate.id
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
+# resource "aws_s3_bucket_versioning" "tfstate" {
+#   bucket = aws_s3_bucket.tfstate.id
+#   versioning_configuration {
+#     status = "Enabled"
+#   }
+# }
 
-resource "aws_s3_bucket_server_side_encryption_configuration" "tfstate" {
-  bucket = aws_s3_bucket.tfstate.id
-  rule {
-    apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
-    }
-  }
-}
+# resource "aws_s3_bucket_server_side_encryption_configuration" "tfstate" {
+#   bucket = aws_s3_bucket.tfstate.id
+#   rule {
+#     apply_server_side_encryption_by_default {
+#       sse_algorithm = "AES256"
+#     }
+#   }
+# }
 
-resource "aws_s3_bucket_public_access_block" "tfstate" {
-  bucket                  = aws_s3_bucket.tfstate.id
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-}
+# resource "aws_s3_bucket_public_access_block" "tfstate" {
+#   bucket                  = aws_s3_bucket.tfstate.id
+#   block_public_acls       = true
+#   block_public_policy     = true
+#   ignore_public_acls      = true
+#   restrict_public_buckets = true
+# }
 
-resource "aws_dynamodb_table" "tfstate_lock" {
-  name         = "keycloak-tfstate-lock" # ← must match versions.tf backend block
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "LockID"
+# resource "aws_dynamodb_table" "tfstate_lock" {
+#   name         = "keycloak-tfstate-lock" # ← must match versions.tf backend block
+#   billing_mode = "PAY_PER_REQUEST"
+#   hash_key     = "LockID"
 
-  attribute {
-    name = "LockID"
-    type = "S"
-  }
-}
+#   attribute {
+#     name = "LockID"
+#     type = "S"
+#   }
+# }
 
 # ── VPC ────────────────────────────────────────────────────────────────────────
 module "vpc" {
