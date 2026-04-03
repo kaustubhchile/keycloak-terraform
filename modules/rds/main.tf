@@ -46,10 +46,11 @@ locals {
 
 # ── AWS Secrets Manager — RDS credentials ─────────────────────────────────────
 resource "aws_secretsmanager_secret" "rds" {
-  name                    = "${var.environment}/keycloak/rds-credentials"
-  description             = "RDS PostgreSQL credentials for Keycloak (${var.environment})"
-  recovery_window_in_days = 0 # ← CHANGE THIS: Force immediate deletion (no recovery window)
-  tags                    = { Name = "${var.environment}-keycloak-rds-secret" }
+  name                           = "${var.environment}/keycloak/rds-credentials"
+  description                    = "RDS PostgreSQL credentials for Keycloak (${var.environment})"
+  recovery_window_in_days        = 0
+  force_overwrite_replica_secret = true # ← ADD THIS
+  tags                           = { Name = "${var.environment}-keycloak-rds-secret" }
 }
 
 resource "aws_secretsmanager_secret_version" "rds" {
@@ -71,10 +72,11 @@ resource "aws_secretsmanager_secret_version" "rds" {
 
 # ── AWS Secrets Manager — Keycloak admin credentials ──────────────────────────
 resource "aws_secretsmanager_secret" "keycloak_admin" {
-  name                    = "${var.environment}/keycloak/admin-credentials"
-  description             = "Keycloak admin console credentials (${var.environment})"
-  recovery_window_in_days = 0 # ← CHANGE THIS: Force immediate deletion (no recovery window)
-  tags                    = { Name = "${var.environment}-keycloak-admin-secret" }
+  name                           = "${var.environment}/keycloak/admin-credentials"
+  description                    = "Keycloak admin console credentials (${var.environment})"
+  recovery_window_in_days        = 0
+  force_overwrite_replica_secret = true # ← ADD THIS
+  tags                           = { Name = "${var.environment}-keycloak-admin-secret" }
 }
 
 resource "aws_secretsmanager_secret_version" "keycloak_admin" {
