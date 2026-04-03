@@ -36,15 +36,15 @@ output "keycloak_url" {
   value       = "http://${module.keycloak.load_balancer_hostname}"
 }
 
-output "tfstate_bucket_name" {
-  description = "S3 bucket used for Terraform remote state"
-  value       = aws_s3_bucket.tfstate.bucket
-}
+# output "tfstate_bucket_name" {
+#   description = "S3 bucket used for Terraform remote state"
+#   value       = aws_s3_bucket.tfstate.bucket
+# }
 
-output "tfstate_lock_table" {
-  description = "DynamoDB table used for state locking"
-  value       = aws_dynamodb_table.tfstate_lock.name
-}
+# output "tfstate_lock_table" {
+#   description = "DynamoDB table used for state locking"
+#   value       = aws_dynamodb_table.tfstate_lock.name
+# }
 
 # ── Handy CLI snippets printed after apply ─────────────────────────────────────
 output "how_to_get_rds_credentials" {
