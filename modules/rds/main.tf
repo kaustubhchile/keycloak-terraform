@@ -10,7 +10,18 @@ resource "random_string" "db_username_suffix" {
   upper   = false
 }
 
+
 resource "random_password" "keycloak_admin_password" {
+  length           = 24
+  special          = true
+  override_special = "!#$%^&*()-_=+"
+  min_upper        = 4
+  min_lower        = 4
+  min_numeric      = 4
+  min_special      = 2
+}
+
+resource "random_password" "db_password" {
   length           = 24
   special          = true
   override_special = "!#$%^&*()-_=+"
