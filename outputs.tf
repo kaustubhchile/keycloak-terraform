@@ -57,3 +57,12 @@ output "how_to_get_keycloak_admin_password" {
   value       = "aws secretsmanager get-secret-value --secret-id ${module.rds.keycloak_admin_secret_arn} --query SecretString --output text | jq ."
 }
 
+output "vpc_id" {
+  value       = aws_vpc.this.id
+  description = "The ID of the VPC"
+}
+
+output "private_subnet_ids" {
+  value       = aws_subnet.private[*].id
+  description = "List of private subnet IDs"
+}
