@@ -95,8 +95,6 @@ module "rds" {
   db_password             = var.db_password             # null → auto-generate
   keycloak_admin_user     = var.keycloak_admin_user     # null → "admin"
   keycloak_admin_password = var.keycloak_admin_password # null → auto-generate
-
-  depends_on = [module.vpc, module.eks]
 }
 
 # ── Keycloak (Helm) ────────────────────────────────────────────────────────────

@@ -1,9 +1,5 @@
 # Terraform Configuration for RDS
 
-provider "aws" {
-  region = "us-west-2"
-}
-
 resource "random_string" "db_username_suffix" {
   length  = 6
   special = false
