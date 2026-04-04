@@ -8,23 +8,13 @@ resource "random_string" "db_username_suffix" {
 
 
 resource "random_password" "keycloak_admin_password" {
-  length           = 16
-  special          = true
-  override_special = "!#$*-_"
-  min_upper        = 2
-  min_lower        = 2
-  min_numeric      = 2
-  min_special      = 1
+  length  = 16
+  special = false
 }
 
 resource "random_password" "db_password" {
-  length           = 16
-  special          = true
-  override_special = "!#$*-_"
-  min_upper        = 2
-  min_lower        = 2
-  min_numeric      = 2
-  min_special      = 1
+  length  = 16
+  special = false
 }
 
 # ── Resolve final values ───────────────────────────────────────────────────────
