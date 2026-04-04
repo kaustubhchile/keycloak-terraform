@@ -8,9 +8,9 @@ resource "random_string" "db_username_suffix" {
 
 
 resource "random_password" "keycloak_admin_password" {
-  length           = 24
+  length           = 20
   special          = true
-  override_special = "!#$%&*()_-+="
+  override_special = "!#$%-_+="
   min_upper        = 4
   min_lower        = 4
   min_numeric      = 4
@@ -18,9 +18,9 @@ resource "random_password" "keycloak_admin_password" {
 }
 
 resource "random_password" "db_password" {
-  length           = 24
+  length           = 20
   special          = true
-  override_special = "!#$%&*()_-+="
+  override_special = "!#$%-_+="
   min_upper        = 4
   min_lower        = 4
   min_numeric      = 4
