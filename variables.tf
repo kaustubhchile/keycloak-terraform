@@ -45,7 +45,7 @@ variable "cluster_name" {
 variable "kubernetes_version" {
   description = "Kubernetes version for the EKS cluster"
   type        = string
-  default     = "1.29"
+  default     = "1.28"
 }
 
 variable "node_instance_type" {
@@ -94,7 +94,7 @@ variable "db_allocated_storage" {
 variable "db_engine_version" {
   description = "PostgreSQL engine version"
   type        = string
-  default     = "15.4"
+  default     = "17.6"
 }
 
 variable "db_multi_az" {
