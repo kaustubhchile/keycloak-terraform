@@ -8,12 +8,18 @@ resource "random_string" "db_username_suffix" {
 
 
 resource "random_password" "keycloak_admin_password" {
-  length  = 16
+  length  = 12
+  lower   = true
+  upper   = true
+  numeric = true
   special = false
 }
 
 resource "random_password" "db_password" {
-  length  = 16
+  length  = 12
+  lower   = true
+  upper   = true
+  numeric = true
   special = false
 }
 
