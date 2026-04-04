@@ -58,11 +58,11 @@ output "how_to_get_keycloak_admin_password" {
 }
 
 output "vpc_id" {
-  value       = aws_vpc.this.id
+  value       = module.vpc.vpc_id
   description = "The ID of the VPC"
 }
 
 output "private_subnet_ids" {
-  value       = aws_subnet.private[*].id
+  value       = module.vpc.private_subnet_ids
   description = "List of private subnet IDs"
 }
