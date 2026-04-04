@@ -37,7 +37,7 @@ locals {
 
 # ── AWS Secrets Manager — RDS credentials ─────────────────────────────────────
 resource "aws_secretsmanager_secret" "rds" {
-  name                           = "${var.environment}/keycloak/rds-credentials"
+  name                           = var.rds_secret_name
   description                    = "RDS PostgreSQL credentials for Keycloak (${var.environment})"
   recovery_window_in_days        = 0
   force_overwrite_replica_secret = true # ← ADD THIS
@@ -63,7 +63,7 @@ resource "aws_secretsmanager_secret_version" "rds" {
 
 # ── AWS Secrets Manager — Keycloak admin credentials ──────────────────────────
 resource "aws_secretsmanager_secret" "keycloak_admin" {
-  name                           = "${var.environment}/keycloak/admin-credentials"
+  name                           = var.keycloak_admin_secret_name
   description                    = "Keycloak admin console credentials (${var.environment})"
   recovery_window_in_days        = 0
   force_overwrite_replica_secret = true # ← ADD THIS

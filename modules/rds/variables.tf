@@ -54,3 +54,17 @@ variable "keycloak_admin_password" {
     error_message = "keycloak_admin_password must be at least 12 characters."
   }
 }
+
+variable "rds_secret_name" {
+  description = "Custom AWS Secrets Manager name for the RDS credentials secret."
+  type        = string
+  default     = "prod/keycloak/rds-credentials-custom"
+  sensitive   = false
+}
+
+variable "keycloak_admin_secret_name" {
+  description = "Custom AWS Secrets Manager name for the Keycloak admin credentials secret."
+  type        = string
+  default     = "prod/keycloak/admin-credentials-custom"
+  sensitive   = false
+}
