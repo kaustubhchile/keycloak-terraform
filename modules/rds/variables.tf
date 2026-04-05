@@ -25,14 +25,21 @@ variable "db_username" {
 }
 
 variable "db_password" {
-  description = "RDS master password. null = auto-generate (32-char random). Minimum 16 chars when supplied."
+  description = "RDS master password. null = auto-generate (32-char random). Minimum 16 chars when supplied. Cannot contain /, @, \" or spaces when supplied."
   type        = string
   default     = null
   sensitive   = true
 
   validation {
-    condition     = var.db_password == null || length(var.db_password) >= 16
-    error_message = "db_password must be at least 16 characters."
+    condition = var.db_password == null || (
+      length(var.db_password) >= 16 &&
+      can(regex("^[!-~]+$", var.db_password)) &&
+      !contains(var.db_password, "/") &&
+      !contains(var.db_password, "@") &&
+      !contains(var.db_password, "\"") &&
+      !contains(var.db_password, " ")
+    )
+    error_message = "db_password must be at least 16 printable ASCII characters and may not include /, @, \" or spaces."
   }
 }
 
