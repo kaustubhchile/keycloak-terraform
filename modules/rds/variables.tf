@@ -34,10 +34,10 @@ variable "db_password" {
     condition = var.db_password == null || (
       length(var.db_password) >= 16 &&
       can(regex("^[!-~]+$", var.db_password)) &&
-      !contains(var.db_password, "/") &&
-      !contains(var.db_password, "@") &&
-      !contains(var.db_password, "\"") &&
-      !contains(var.db_password, " ")
+      !strcontains(var.db_password, "/") &&
+      !strcontains(var.db_password, "@") &&
+      !strcontains(var.db_password, "\"") &&
+      !strcontains(var.db_password, " ")
     )
     error_message = "db_password must be at least 16 printable ASCII characters and may not include /, @, \" or spaces."
   }
